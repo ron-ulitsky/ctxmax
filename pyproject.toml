@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "conmax"
+name = "ctxmax"
 version = "0.1.0"
 description = "Context maximizer: dynamic just-in-time chat history compression for LLMs"
 requires-python = ">=3.11"
@@ -17,4 +17,4 @@ dev = ["pytest>=8.0.0"]
 all = ["anthropic>=0.40.0", "openai>=1.50.0", "tiktoken>=0.7.0", "rich>=13.0.0"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/conmax"]
+packages = ["src/ctxmax"]

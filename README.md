@@ -1,8 +1,8 @@
-# conmax
+# ctxmax
 
 **Context Maximizer** — dynamic just-in-time chat history compression for LLMs.
 
-Instead of compressing chat history to a fixed size when hitting a threshold, conmax compresses *just enough* on each turn so you retain the maximum possible context.
+Instead of compressing chat history to a fixed size when hitting a threshold, ctxmax compresses *just enough* on each turn so you retain the maximum possible context.
 
 ## The Problem
 
@@ -14,7 +14,7 @@ Both approaches throw away more information than needed.
 
 ## The Solution
 
-conmax implements a simple formula: given a context budget `C`, a new prompt of size `p`, and a response reservation `r`, compress history to at most `C - p - r` tokens — and no more.
+ctxmax implements a simple formula: given a context budget `C`, a new prompt of size `p`, and a response reservation `r`, compress history to at most `C - p - r` tokens — and no more.
 
 The compression algorithm:
 1. If history already fits, do nothing (zero overhead)
@@ -27,24 +27,24 @@ This means you always retain the maximum amount of context that your budget allo
 ## Installation
 
 ```bash
-pip install conmax
+pip install ctxmax
 ```
 
 With provider extras:
 
 ```bash
-pip install conmax[anthropic]   # For Claude
-pip install conmax[openai]      # For GPT + tiktoken
-pip install conmax[all]         # Everything including CLI demo deps
+pip install ctxmax[anthropic]   # For Claude
+pip install ctxmax[openai]      # For GPT + tiktoken
+pip install ctxmax[all]         # Everything including CLI demo deps
 ```
 
 ## Quick Start
 
 ```python
-from conmax import ConmaxChat, create_provider
+from ctxmax import CtxmaxChat, create_provider
 
 provider = create_provider("anthropic")  # or "openai"
-chat = ConmaxChat(provider, context_budget=100_000)
+chat = CtxmaxChat(provider, context_budget=100_000)
 
 stats = chat.send("Hello! Tell me about quantum computing.")
 print(chat.last_response)
@@ -59,11 +59,11 @@ if stats.tokens_saved > 0:
 ## Configuration
 
 ```python
-from conmax import ConmaxChat, CompressionConfig, create_provider
+from ctxmax import CtxmaxChat, CompressionConfig, create_provider
 
 provider = create_provider("anthropic", model="claude-sonnet-4-20250514")
 
-chat = ConmaxChat(
+chat = CtxmaxChat(
     provider=provider,
     context_budget=100_000,       # Model's context window
     response_reservation=2048,    # Tokens reserved for the response
@@ -78,10 +78,10 @@ chat = ConmaxChat(
 
 ## Provider Abstraction
 
-conmax is provider-agnostic. Built-in providers for Anthropic and OpenAI are included, and you can bring your own:
+ctxmax is provider-agnostic. Built-in providers for Anthropic and OpenAI are included, and you can bring your own:
 
 ```python
-from conmax import LLMProvider, TokenCounter, APPROXIMATE_COUNTER
+from ctxmax import LLMProvider, TokenCounter, APPROXIMATE_COUNTER
 
 class MyProvider(LLMProvider):
     def _make_token_counter(self):
@@ -128,7 +128,7 @@ stats.compression_result     # Detailed CompressionResult, or None
 An interactive demo is included that shows compression in action with live stats:
 
 ```bash
-pip install conmax[all]
+pip install ctxmax[all]
 ANTHROPIC_API_KEY=sk-... python examples/cli_demo.py
 ```
 
@@ -160,13 +160,13 @@ The key property: **compression is lazy and minimal**. Each turn compresses only
 
 ## Tradeoffs: Context Accuracy vs. Response Time
 
-conmax makes an explicit tradeoff compared to traditional approaches: it prioritizes **context accuracy** (retaining maximum information) at the cost of **response latency** (extra LLM calls for compression).
+ctxmax makes an explicit tradeoff compared to traditional approaches: it prioritizes **context accuracy** (retaining maximum information) at the cost of **response latency** (extra LLM calls for compression).
 
 ### The core tension
 
 Traditional compression strategies compress aggressively and infrequently — they batch a large chunk of history into a small summary, then coast for many turns before compressing again. This is fast on average but lossy: you throw away more context than you need to, and that information is gone forever.
 
-conmax takes the opposite approach: compress minimally but potentially on every turn. Once the conversation exceeds the context budget, each new message may trigger a small compression pass. This means:
+ctxmax takes the opposite approach: compress minimally but potentially on every turn. Once the conversation exceeds the context budget, each new message may trigger a small compression pass. This means:
 
 - **More LLM calls per turn** — each compression requires a summarization call *before* the actual chat call, so a turn that triggers compression makes 2+ API calls instead of 1
 - **Higher latency** — the user waits for the compression call(s) to complete before their message is processed
@@ -174,7 +174,7 @@ conmax takes the opposite approach: compress minimally but potentially on every 
 
 ### When this tradeoff makes sense
 
-conmax is worth it when **context quality matters more than speed**:
+ctxmax is worth it when **context quality matters more than speed**:
 
 - **Long-running agents** where losing early context causes the agent to repeat mistakes or forget decisions
 - **Complex multi-step workflows** where the model needs to reference information from much earlier in the conversation
@@ -208,15 +208,15 @@ Several strategies can reduce the overhead:
 |----------|----------------|-------------|------|----------------------|
 | Truncation | Low — old context is deleted | None | None | Never |
 | Fixed-threshold compression | Medium — compresses more than needed | Low (amortized) | Low (infrequent) | Infrequent, aggressive |
-| **conmax (just-in-time)** | **High — minimal information loss** | Medium (per-turn) | Medium (frequent, small) | Frequent, minimal |
+| **ctxmax (just-in-time)** | **High — minimal information loss** | Medium (per-turn) | Medium (frequent, small) | Frequent, minimal |
 
-The fundamental insight is that compression is lossy, so the less you compress, the better your context quality. conmax minimizes total information loss by spreading compression across many small, targeted passes rather than a few large destructive ones.
+The fundamental insight is that compression is lossy, so the less you compress, the better your context quality. ctxmax minimizes total information loss by spreading compression across many small, targeted passes rather than a few large destructive ones.
 
 ## Development
 
 ```bash
-git clone https://github.com/yourusername/conmax.git
-cd conmax
+git clone https://github.com/yourusername/ctxmax.git
+cd ctxmax
 pip install -e ".[dev]"
 pytest tests/
 ```

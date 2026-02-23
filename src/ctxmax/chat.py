@@ -32,12 +32,12 @@ class TurnStats:
         return (self.total_context_tokens / self.context_budget) * 100
 
 
-class ConmaxChat:
+class CtxmaxChat:
     """Stateful conversation with automatic just-in-time compression.
 
     Usage:
         provider = AnthropicProvider()
-        chat = ConmaxChat(provider, context_budget=100_000)
+        chat = CtxmaxChat(provider, context_budget=100_000)
         stats = chat.send("Hello!")
         print(chat.last_response)
     """

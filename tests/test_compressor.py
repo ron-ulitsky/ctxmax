@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from conmax.tokenizer import Message, APPROXIMATE_COUNTER, TokenCounter
-from conmax.provider import LLMProvider
-from conmax.compressor import (
+from ctxmax.tokenizer import Message, APPROXIMATE_COUNTER, TokenCounter
+from ctxmax.provider import LLMProvider
+from ctxmax.compressor import (
     CompressionConfig,
     CompressionResult,
     COMPRESSION_MARKER,
     compress_history,
 )
-from conmax.chat import ConmaxChat, TurnStats
+from ctxmax.chat import CtxmaxChat, TurnStats
 
 
 class MockProvider(LLMProvider):
@@ -138,10 +138,10 @@ class TestCompressionConfig:
         assert result.compressions_performed == 0
 
 
-class TestConmaxChat:
+class TestCtxmaxChat:
     def test_send_returns_turn_stats(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         stats = chat.send("Hello!")
         assert isinstance(stats, TurnStats)
         assert stats.prompt_tokens > 0
@@ -149,7 +149,7 @@ class TestConmaxChat:
 
     def test_history_grows_after_send(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         chat.send("Hello!")
         assert len(chat.history) == 2  # user + assistant
         chat.send("How are you?")
@@ -157,13 +157,13 @@ class TestConmaxChat:
 
     def test_last_response(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         chat.send("Hello!")
         assert chat.last_response == "Mock response."
 
     def test_compression_triggers_with_tiny_budget(self):
         provider = MockProvider()
-        chat = ConmaxChat(
+        chat = CtxmaxChat(
             provider,
             context_budget=200,
             response_reservation=50,
@@ -177,7 +177,7 @@ class TestConmaxChat:
 
     def test_reset_clears_history(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         chat.send("Hello!")
         chat.reset()
         assert chat.history == []
@@ -185,13 +185,13 @@ class TestConmaxChat:
 
     def test_utilization_is_sensible(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         stats = chat.send("Hello!")
         assert 0 < stats.utilization_pct < 100
 
     def test_export_import_history(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         chat.send("Hello!")
         exported = chat.export_history()
         chat.reset()
@@ -200,6 +200,6 @@ class TestConmaxChat:
 
     def test_context_budget_setter(self):
         provider = MockProvider()
-        chat = ConmaxChat(provider, context_budget=10000)
+        chat = CtxmaxChat(provider, context_budget=10000)
         chat.context_budget = 5000
         assert chat.context_budget == 5000

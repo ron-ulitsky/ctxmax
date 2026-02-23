@@ -1,6 +1,6 @@
-"""conmax — context maximizer: dynamic just-in-time chat history compression for LLMs."""
+"""ctxmax — context maximizer: dynamic just-in-time chat history compression for LLMs."""
 
-from .chat import ConmaxChat, TurnStats
+from .chat import CtxmaxChat, TurnStats
 from .compressor import CompressionConfig, CompressionResult, COMPRESSION_MARKER
 from .provider import LLMProvider, AnthropicProvider, OpenAIProvider, create_provider
 from .tokenizer import (
@@ -11,7 +11,7 @@ from .tokenizer import (
 )
 
 __all__ = [
-    "ConmaxChat",
+    "CtxmaxChat",
     "TurnStats",
     "LLMProvider",
     "AnthropicProvider",

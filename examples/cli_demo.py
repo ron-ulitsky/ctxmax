@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive CLI demo for conmax — context maximizer."""
+"""Interactive CLI demo for ctxmax — context maximizer."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ import sys
 # Add src to path for running without pip install
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from conmax.chat import ConmaxChat, TurnStats
-from conmax.compressor import CompressionConfig, COMPRESSION_MARKER
-from conmax.provider import LLMProvider, create_provider
+from ctxmax.chat import CtxmaxChat, TurnStats
+from ctxmax.compressor import CompressionConfig, COMPRESSION_MARKER
+from ctxmax.provider import LLMProvider, create_provider
 
 
 def _has_rich() -> bool:
@@ -151,14 +151,14 @@ def render_stats(stats: TurnStats) -> None:
         render_stats_plain(stats)
 
 
-def print_history_summary(chat: ConmaxChat) -> None:
+def print_history_summary(chat: CtxmaxChat) -> None:
     history = chat.history
     total = len(history)
     summaries = sum(1 for m in history if m["content"].startswith(COMPRESSION_MARKER))
     print(f"\nHistory: {total} messages ({summaries} summaries, {total - summaries} verbatim)\n")
 
 
-def print_full_history(chat: ConmaxChat) -> None:
+def print_full_history(chat: CtxmaxChat) -> None:
     for i, msg in enumerate(chat.history):
         role = msg["role"].upper()
         content = msg["content"]
@@ -170,14 +170,14 @@ def print_full_history(chat: ConmaxChat) -> None:
 
 def main() -> None:
     print("=" * 50)
-    print("  conmax — context maximizer demo")
+    print("  ctxmax — context maximizer demo")
     print("=" * 50)
     print()
 
     provider = pick_provider()
     budget, reserve = pick_budget()
 
-    chat = ConmaxChat(
+    chat = CtxmaxChat(
         provider=provider,
         context_budget=budget,
         response_reservation=reserve,

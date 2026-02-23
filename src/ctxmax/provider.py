@@ -64,7 +64,7 @@ class AnthropicProvider(LLMProvider):
             import anthropic
         except ImportError:
             raise ImportError(
-                "anthropic package required. Install with: pip install conmax[anthropic]"
+                "anthropic package required. Install with: pip install ctxmax[anthropic]"
             )
 
         self._client = anthropic.Anthropic(
@@ -147,7 +147,7 @@ class OpenAIProvider(LLMProvider):
             from openai import OpenAI
         except ImportError:
             raise ImportError(
-                "openai package required. Install with: pip install conmax[openai]"
+                "openai package required. Install with: pip install ctxmax[openai]"
             )
 
         kwargs: dict = {}
