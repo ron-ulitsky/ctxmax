@@ -158,6 +158,60 @@ Turn 7:   History exceeds budget again
 
 The key property: **compression is lazy and minimal**. Each turn compresses only what's needed, preserving maximum context at all times.
 
+## Tradeoffs: Context Accuracy vs. Response Time
+
+conmax makes an explicit tradeoff compared to traditional approaches: it prioritizes **context accuracy** (retaining maximum information) at the cost of **response latency** (extra LLM calls for compression).
+
+### The core tension
+
+Traditional compression strategies compress aggressively and infrequently — they batch a large chunk of history into a small summary, then coast for many turns before compressing again. This is fast on average but lossy: you throw away more context than you need to, and that information is gone forever.
+
+conmax takes the opposite approach: compress minimally but potentially on every turn. Once the conversation exceeds the context budget, each new message may trigger a small compression pass. This means:
+
+- **More LLM calls per turn** — each compression requires a summarization call *before* the actual chat call, so a turn that triggers compression makes 2+ API calls instead of 1
+- **Higher latency** — the user waits for the compression call(s) to complete before their message is processed
+- **Higher cost** — more API calls means more tokens processed and more money spent
+
+### When this tradeoff makes sense
+
+conmax is worth it when **context quality matters more than speed**:
+
+- **Long-running agents** where losing early context causes the agent to repeat mistakes or forget decisions
+- **Complex multi-step workflows** where the model needs to reference information from much earlier in the conversation
+- **Low-volume, high-value conversations** (e.g. consulting, debugging sessions) where the user can tolerate an extra second or two of latency in exchange for better responses
+- **Small context windows** (local models, older APIs) where every token of context is precious
+
+### When traditional approaches are better
+
+Stick with fixed-threshold compression or simple truncation when:
+
+- **Latency is critical** — real-time chatbots, customer support, etc.
+- **Conversations are short** — if you rarely hit the context limit, the optimization doesn't matter
+- **Context isn't that important** — casual chat, simple Q&A where old messages rarely matter
+- **Cost sensitivity is high** — the extra compression calls add up at scale
+
+### Mitigating the latency cost
+
+Several strategies can reduce the overhead:
+
+| Strategy | How it helps |
+|----------|-------------|
+| **Use a cheap/fast model for compression** | Set `compression_model` to a smaller model (e.g. `claude-haiku-4-5-20251001` for compression, `claude-sonnet-4-20250514` for chat). Summarization doesn't need your best model. |
+| **Increase `chunk_size`** | Larger chunks mean fewer compression calls per turn, at the cost of coarser-grained compression. |
+| **Tune `summary_ratio`** | A lower ratio compresses more aggressively per chunk, meaning you need fewer chunks compressed to fit. |
+| **Increase `response_reservation`** | A larger reservation means compression kicks in earlier and has more room, reducing the chance of needing multiple chunk compressions in a single turn. |
+| **Use local models for compression** | Route compression calls to a fast local model via Ollama while keeping your main chat on a cloud API. |
+
+### Comparison
+
+| Approach | Context quality | Avg latency | Cost | Compression frequency |
+|----------|----------------|-------------|------|----------------------|
+| Truncation | Low — old context is deleted | None | None | Never |
+| Fixed-threshold compression | Medium — compresses more than needed | Low (amortized) | Low (infrequent) | Infrequent, aggressive |
+| **conmax (just-in-time)** | **High — minimal information loss** | Medium (per-turn) | Medium (frequent, small) | Frequent, minimal |
+
+The fundamental insight is that compression is lossy, so the less you compress, the better your context quality. conmax minimizes total information loss by spreading compression across many small, targeted passes rather than a few large destructive ones.
+
 ## Development
 
 ```bash
